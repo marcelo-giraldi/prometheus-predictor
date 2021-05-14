@@ -1,0 +1,16 @@
+---
+name: prophet-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - fbprophet
+  - pip:
+      - pandas
+      - schedule
+      - prometheus_client
+      - prometheus_api_client
+      - tornado
+      - dateparser
+      - numpy
