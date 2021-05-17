@@ -1,0 +1,21 @@
+settings:
+  prometheus_url: http://demo.robustperception.io:9090/
+params:
+  p1:
+    seasonality: 
+      daily: true
+      montly: true
+      mode: multiplicative
+  p2:
+    seasonality:
+      daily: false
+      monthly: false
+      mode: flat
+models:
+  alertmanager:
+    saturation:
+      expr: sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
+      params: p1
+    latency:
+      expr: sum(irate(alertmanager_http_request_duration_seconds_sum[5m])) / sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
+      params: p2

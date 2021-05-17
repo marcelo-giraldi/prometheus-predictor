@@ -14,3 +14,4 @@ dependencies:
       - tornado
       - dateparser
       - numpy
+      - pyyaml
