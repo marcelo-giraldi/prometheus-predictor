@@ -1,3 +1,6 @@
-from config_parser import config
+import controller, webserver, scheduler
 
-print(config['settings'])
+controller.load_models()
+
+# scheduler.schedule()
+# webserver.start()

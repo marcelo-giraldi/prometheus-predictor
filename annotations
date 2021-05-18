@@ -1,0 +1,23 @@
+1. No startup:
+  1. Verifica se há modelo gravado em disco
+  2. Se não: 
+    1. Faz a consulta full
+    2. Roda o modelo
+    3. Grava o modelo em disco
+  3. Se sim: 
+    1. Carrega o modelo do disco
+    2. Faz a consulta parcial (data atual menos a última data do modelo)
+    3. Roda o modelo
+    4. Grava o modelo em disco
+
+2. A cada x tempo (tempo de retreino): 
+  1. Faz a consulta parcial (data atual menos a última data do modelo)
+  2. Roda o modelo
+  3. Grava o modelo em disco
+
+3. Get
+  1. Pega os dados mais próximos de agora
+  2. Monta a página
+
+
+Os dados à frente (predição) devem ser de 3 vezes o retraining_interval

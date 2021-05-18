@@ -1,5 +1,8 @@
 settings:
   prometheus_url: http://demo.robustperception.io:9090/
+params_global:
+  retraining_interval_minutes: 360
+  training_window: 21d
 params:
   p1:
     seasonality: 
@@ -11,7 +14,7 @@ params:
       daily: false
       monthly: false
       mode: flat
-models:
+model_templates:
   alertmanager:
     saturation:
       expr: sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
