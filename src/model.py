@@ -1,9 +1,13 @@
+from fbprophet import Prophet
+
 class PredictorModel:
     model = None
     forecast = []
 
-    def __init__
-    def train:
+    def __init__(self):
+        pass
+    def train(self, df):
+        self.model = Prophet()
         # also call predict
     def update:
         # also call predict

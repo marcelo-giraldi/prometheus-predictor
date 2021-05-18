@@ -1,24 +1,16 @@
 settings:
-  prometheus_url: http://demo.robustperception.io:9090/
-params_global:
-  retraining_interval_minutes: 360
-  training_window: 21d
+  prometheus:
+    url: http://demo.robustperception.io:9090/
 params:
-  p1:
-    seasonality: 
-      daily: true
-      montly: true
-      mode: multiplicative
-  p2:
-    seasonality:
-      daily: false
-      monthly: false
-      mode: flat
+  three_weeks:
+    retraining_interval_minutes: 360
+    training_window: 21d    
+    resolution: 15s
 model_templates:
   alertmanager:
     saturation:
       expr: sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
-      params: p1
+      params: three_weeks
     latency:
       expr: sum(irate(alertmanager_http_request_duration_seconds_sum[5m])) / sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
-      params: p2
+      params: three_weeks
