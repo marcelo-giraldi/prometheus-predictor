@@ -5,8 +5,8 @@ from util import setDefault
 document = open('./config/predictor.yml', 'r')
 config = load(document, Loader=Loader)
 
-def getSettings():
-    return deepcopy(config['settings'])
+def getSettings(group):
+    return deepcopy(config['settings'][group])
 
 def getParams(group_name):
     params = deepcopy(config['params'][group_name])
