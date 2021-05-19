@@ -8,4 +8,4 @@ RUN conda env create -f environment.yml
 
 VOLUME ["/opt/pp/config"]
 
-CMD ["python", "src/index.py"]
+CMD ["/opt/conda/envs/prophet-env/bin/python", "src/index.py"]

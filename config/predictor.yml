@@ -3,7 +3,7 @@ settings:
     url: http://demo.robustperception.io:9090/
 params:
   three_weeks:
-    retraining_interval_minutes: 360
+    retraining_interval: 6h
     training_window: 21d    
     resolution: 15s
 model_templates:
