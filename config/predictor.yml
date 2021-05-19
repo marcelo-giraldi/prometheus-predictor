@@ -6,6 +6,10 @@ params:
     retraining_interval: 6h
     training_window: 21d    
     resolution: 15s
+    daily_seasonality: true
+  three_months:
+    training_window: 90d
+    resolution: 1h
 model_templates:
   alertmanager:
     saturation:
@@ -13,4 +17,4 @@ model_templates:
       params: three_weeks
     latency:
       expr: sum(irate(alertmanager_http_request_duration_seconds_sum[5m])) / sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
-      params: three_weeks
+      params: three_months

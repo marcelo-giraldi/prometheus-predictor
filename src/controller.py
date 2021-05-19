@@ -1,14 +1,11 @@
+from os import listdir
+from config_parser import getModelTemplates
 
 models = {}
+
 '''
 For each model listed in configuration, check whether it's saved on disk
 If not, train the model
-Example:
-    {
-        alertmanager:
-            saturation: <model>
-            latency: <model>
-    }
 '''
 def load_models():
     '''
@@ -22,7 +19,8 @@ def load_models():
             in parallel, call train_model(model_template)
             append to the models dict
     '''
-    models = {}
+    templates = getModelTemplates()
+    saved_models = listdir('./config/models')
 
 def train_model(model_template):
     '''
