@@ -5,11 +5,11 @@ params:
   three_weeks:
     retraining_interval: 6h
     training_window: 21d    
-    resolution: 15s
+    resolution: 30m
     daily_seasonality: true
   three_months:
     training_window: 90d
-    resolution: 1h
+    resolution: 1d
 model_templates:
   alertmanager:
     saturation:
@@ -18,3 +18,7 @@ model_templates:
     latency:
       expr: sum(irate(alertmanager_http_request_duration_seconds_sum[5m])) / sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
       params: three_months
+  prometheus:
+    counter:
+      expr: prometheus_http_request_duration_seconds_count{handler=~'/alerts|/config'}
+      params: three_weeks

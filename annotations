@@ -25,7 +25,24 @@ Os dados à frente (predição) devem ser de 3 vezes o retraining_interval
 
 Retorno do prom_client:
 
-obj = [
+query:
+[
+    {
+        "metric": {
+            "__name__": "prometheus_http_request_duration_seconds_count",
+            "handler": "/alerts",
+            "instance": "demo.robustperception.io:9090",
+            "job": "prometheus"
+        },
+        "value": [
+            1621509622.008,
+            "15"
+        ]
+    }
+]
+
+query_range:
+[
     {
         'metric': {
             '__name__': 'prometheus_http_requests_total', 
@@ -107,5 +124,28 @@ obj = [
                 1621429991, '2'
             ]
         ]
+    }
+]
+
+[
+    {
+        "expr": "sum(irate(alertmanager_http_request_duration_seconds_count[5m]))",
+        "params": {
+            "retraining_interval": "6h",
+            "training_window": "21d",
+            "resolution": "15s",
+            "daily_seasonality": True
+        },
+        "group": "alertmanager",
+        "name": "saturation"
+    },
+    {
+        "expr": "sum(irate(alertmanager_http_request_duration_seconds_sum[5m])) / sum(irate(alertmanager_http_request_duration_seconds_count[5m]))",
+        "params": {
+            "training_window": "90d",
+            "resolution": "1h"
+        },
+        "group": "alertmanager",
+        "name": "latency"
     }
 ]
