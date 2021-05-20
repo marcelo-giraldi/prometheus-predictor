@@ -14,6 +14,9 @@ pc = PrometheusConnect(
     disable_ssl=True,
 )
 
-def query(expr, time_range, resolution):
+def query_range(expr, time_range, resolution):
     delta = parse_timedelta('now', time_range)
     return pc.custom_query_range(query = expr, start_time = datetime.now() - delta, end_time = datetime.now(), step = resolution)
+
+def query(expr):
+    return pc.custom_query(query = expr)
