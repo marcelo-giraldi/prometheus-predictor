@@ -19,16 +19,22 @@ class MetricsHandler(tornado.web.RequestHandler):
     async def get(self):
         for model_group in model_groups:
             for model in model_group.models:
-                metric_name = f'{model.template["name"]}_pred'
-                model.metric['metric']['__name__'] = metric_name
-                metric = Metric(model.metric)
-                if metric_name not in gauges:
-                    gauges[metric_name] = Gauge(metric_name, metric_name, {*metric.label_config.keys(), 'value_type'})
-                prediction = model.get_forecast(datetime.now(timezone.utc))
-                for column in list(prediction.columns):
-                    gauges[metric_name].labels(**metric.label_config, value_type=column).set(prediction[column][0])
+                self.update_metrics(model)
+
         self.write(generate_latest(REGISTRY).decode('utf-8'))
         self.set_header("Content-Type", "text; charset=utf-8")
+
+    def update_metrics(self, model):
+        metric_name = f'{model.template["name"]}_pred'
+        model.metric['metric']['__name__'] = metric_name
+        metric = Metric(model.metric)
+        prediction = model.get_forecast(datetime.now(timezone.utc))
+
+        if metric_name not in gauges:
+            gauges[metric_name] = Gauge(metric_name, metric_name, {*metric.label_config.keys(), 'value_type'})
+
+        for column in list(prediction.columns):
+            gauges[metric_name].labels(**metric.label_config, value_type=column).set(prediction[column][0])
 
 def start():
     settings = getSettings('server')

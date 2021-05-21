@@ -51,9 +51,9 @@ class PredictorModel:
         self.predict()
         self.save()
 
-    def update():
-        pass
-        # also call predict
+    def update(self, metric):
+        self.metric = metric
+        self.train()
 
     def predict(self):
         retraining_interval = self.template['params'].setdefault('retraining_interval', '1h')
@@ -68,6 +68,10 @@ class PredictorModel:
         forecast = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
         forecast = forecast.set_index("ds")
         self.forecast = forecast
+
+    def get_forecast(self, ds):
+        nearest_index = self.forecast.index.get_loc(ds, method='nearest')
+        return self.forecast.iloc[[nearest_index]]
 
     def save(self):
         fbmodel = self.fbmodel
@@ -86,9 +90,3 @@ class PredictorModel:
             instance = pickle.load(f)
             instance.fbmodel = serialize.model_from_json(instance.fbmodel)
             return instance
-
-    def get_forecast(self, ds):
-        nearest_index = self.forecast.index.get_loc(
-            ds, method='nearest'
-        )
-        return self.forecast.iloc[[nearest_index]]
