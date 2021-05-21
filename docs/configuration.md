@@ -19,6 +19,11 @@ settings:
   prometheus:
     url: <string>
     [access_token: <string>]
+  # Local webserver configuration
+  [server:]
+    [port: <integer> | default = 8080]
+    [metrics_path: <string> | default = /metrics]
+
 
 params:
   # You can define one or more param groups. Each model reference a group name to define its params

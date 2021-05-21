@@ -5,11 +5,10 @@ from prom_client import query_range
 from prometheus_api_client.utils import parse_timedelta
 
 class PredictorModelGroup:
-    template = None
-    models = []
 
     def __init__(self, template):
         self.template = template
+        self.models = []
 
     def load_models(self):
         # Get the data from Prometheus for the given expression
@@ -24,26 +23,20 @@ class PredictorModelGroup:
             try:
                 model = PredictorModel.load(self.template['group'], self.template['name'], metric['hash'])
             except IOError as e:
-                model = PredictorModel(metric['hash'], self.template)
-                model.train(metric['values'])
+                model = PredictorModel(metric, self.template)
+                model.train()
 
             # Append the model to the models list
             self.models.append(model)
 
-    def train_models(self, model):
-        template = self.template
-        params = template['params']
-
 class PredictorModel:
-    hash = None
-    template = None
-    fbmodel = None
-    last_train = None
-    forecast = None
 
-    def __init__(self, hash, template):
-        self.hash = hash
+    def __init__(self, metric, template):
+        self.metric = metric
         self.template = template
+        self.fbmodel = None
+        self.forecast = None
+
         params = template['params']
         self.fbmodel = Prophet(
             daily_seasonality = params.setdefault('daily_seasonality', False),
@@ -51,10 +44,9 @@ class PredictorModel:
             yearly_seasonality = params.setdefault('yearly_seasonality', False)
         )
 
-    def train(self, prom_values):
-        df = pd.DataFrame(prom_values, columns=['ds', 'y'])
+    def train(self):
+        df = pd.DataFrame(self.metric['values'], columns=['ds', 'y'])
         df['ds'] = pd.to_datetime(arg=df['ds'], origin='unix', unit='s')
-        print(df)
         self.fbmodel.fit(df)
         self.predict()
         self.save()
@@ -83,7 +75,7 @@ class PredictorModel:
         template_name = self.template['name']
         self.fbmodel = serialize.model_to_json(fbmodel)
         try:
-            with open(f'./config/models/{group_name}_{template_name}_{self.hash}','wb+') as f:
+            with open(f'./config/models/{group_name}_{template_name}_{self.metric["hash"]}','wb+') as f:
                 pickle.dump(self, f)
         finally:
             self.fbmodel = fbmodel
@@ -95,8 +87,8 @@ class PredictorModel:
             instance.fbmodel = serialize.model_from_json(instance.fbmodel)
             return instance
 
-    def get_forecast(self, datetime):
+    def get_forecast(self, ds):
         nearest_index = self.forecast.index.get_loc(
-            datetime, method='nearest'
+            ds, method='nearest'
         )
         return self.forecast.iloc[[nearest_index]]

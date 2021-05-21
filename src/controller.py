@@ -1,7 +1,7 @@
 from config_parser import getModelTemplates
 from model import PredictorModelGroup
 
-modelGroups = []
+model_groups = []
 
 '''
 For each model listed in configuration, check whether it's saved on disk
@@ -21,10 +21,9 @@ def load_models():
     '''
 
     for template in getModelTemplates():
-        modelGroup = PredictorModelGroup(template)
-        modelGroups.append(modelGroup)
-        modelGroup.load_models()           
-    print(modelGroups)
+        model_group = PredictorModelGroup(template)
+        model_groups.append(model_group)
+        model_group.load_models()
 
 def train_model(model_template):
     '''

@@ -5,7 +5,7 @@ document = open('./config/predictor.yml', 'r')
 config = load(document, Loader=Loader)
 
 def getSettings(group):
-    return deepcopy(config['settings'][group])
+    return deepcopy(config['settings'].setdefault(group, {}))
 
 def getParams(group_name):
     return deepcopy(config['params'][group_name])
