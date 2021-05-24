@@ -1,12 +1,12 @@
 import tornado.web
 import tornado.ioloop
-from prometheus_api_client import Metric
-from prometheus_client import Gauge, generate_latest, REGISTRY
 from datetime import datetime, timezone
 from controller import model_groups
 from config_parser import getSettings
+from util import get_formatted_metric
+import logging
 
-gauges = dict()
+logger = logging.getLogger(__name__)
 
 class MainHandler(tornado.web.RequestHandler):
     
@@ -15,26 +15,24 @@ class MainHandler(tornado.web.RequestHandler):
         self.set_header("Content-Type", "text; charset=utf-8")
 
 class MetricsHandler(tornado.web.RequestHandler):
-    
-    async def get(self):
-        for model_group in model_groups:
-            for model in model_group.models:
-                self.update_metrics(model)
 
-        self.write(generate_latest(REGISTRY).decode('utf-8'))
+    async def get(self):
+        self.metrics_list = []
+
+        for model_group in model_groups:
+            for model in model_group.models.values():
+                self.set_metrics(model)
+
+        self.write('\n'.join(self.metrics_list))
         self.set_header("Content-Type", "text; charset=utf-8")
 
-    def update_metrics(self, model):
+    def set_metrics(self, model):
         metric_name = f'{model.template["name"]}_pred'
-        model.metric['metric']['__name__'] = metric_name
-        metric = Metric(model.metric)
+        labels = model.metric['metric']
         prediction = model.get_forecast(datetime.now(timezone.utc))
 
-        if metric_name not in gauges:
-            gauges[metric_name] = Gauge(metric_name, metric_name, {*metric.label_config.keys(), 'value_type'})
-
         for column in list(prediction.columns):
-            gauges[metric_name].labels(**metric.label_config, value_type=column).set(prediction[column][0])
+            self.metrics_list.append(get_formatted_metric(metric_name, labels, prediction[column][0]))
 
 def start():
     settings = getSettings('server')
@@ -45,5 +43,4 @@ def start():
         ]
     )
     app.listen(settings.setdefault('port', 8080))
-    print('Webserver running')
     tornado.ioloop.IOLoop.current().start()

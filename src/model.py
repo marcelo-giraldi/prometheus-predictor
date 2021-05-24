@@ -2,15 +2,23 @@ from fbprophet import Prophet, serialize
 import pickle
 import pandas as pd
 from prom_client import query_range
-from prometheus_api_client.utils import parse_timedelta
+from scheduler import addJob
+from util import get_interval_minutes
 
 class PredictorModelGroup:
 
     def __init__(self, template):
         self.template = template
-        self.models = []
+        self.models = {}
 
     def load_models(self):
+        self.load_data(self.load_model)
+        addJob(self)
+    
+    def update_models(self):
+        self.load_data(self.update_model)
+
+    def load_data(self, callback):
         # Get the data from Prometheus for the given expression
         metrics = query_range(
             self.template['expr'],
@@ -18,16 +26,26 @@ class PredictorModelGroup:
             self.template['params'].setdefault('resolution', '15s')
         )
 
-        for metric in metrics:
-            # Try to load a model instance from disk. If there is none, creates a new instance
-            try:
-                model = PredictorModel.load(self.template['group'], self.template['name'], metric['hash'])
-            except IOError as e:
-                model = PredictorModel(metric, self.template)
-                model.train()
+        if callback:
+            for metric in metrics:
+                callback(metric)
+        
+        return metrics
+    
+    def load_model(self, metric):
+        # Try to load a model instance from disk. If there is none, creates a new instance
+        try:
+            model = PredictorModel.load(self.template['group'], self.template['name'], metric['hash'])
+        except IOError as e:
+            model = PredictorModel(metric, self.template)
+            model.train()
 
-            # Append the model to the models list
-            self.models.append(model)
+        # Append the model to the models list
+        self.models[model.metric['hash']] = model
+
+    def update_model(self, metric):
+        model = self.models[metric['hash']]
+        model.update(metric)
 
 class PredictorModel:
 
@@ -57,8 +75,7 @@ class PredictorModel:
 
     def predict(self):
         retraining_interval = self.template['params'].setdefault('retraining_interval', '1h')
-        delta = parse_timedelta('now', retraining_interval)
-        prediction_interval_minutes = int(delta.seconds / 60) * 3
+        prediction_interval_minutes = get_interval_minutes(retraining_interval)
         df = self.fbmodel.make_future_dataframe(
             periods = prediction_interval_minutes, 
             freq = '1MIN', 

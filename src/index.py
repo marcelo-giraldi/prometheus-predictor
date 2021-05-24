@@ -1,7 +1,13 @@
 import controller, webserver, scheduler
-from threading import Thread
+import logging
 
-ctrl = Thread(target=controller.load_models, args=())
-ctrl.start()
+logging.basicConfig(level=logging.DEBUG)
+
+logging.info('Starting scheduler...')
+scheduler.start()
+
+logging.info('Starting controller...')
+controller.start()
+
+logging.info('Starting webserver...')
 webserver.start()
-# scheduler.schedule()
