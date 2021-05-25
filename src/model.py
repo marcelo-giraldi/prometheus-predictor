@@ -2,24 +2,29 @@ from fbprophet import Prophet, serialize
 import pickle
 import pandas as pd
 from prom_client import query_range
-from scheduler import addJob
+from scheduler import add_update_job
 from util import get_interval_minutes
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PredictorModelGroup:
 
     def __init__(self, template):
         self.template = template
         self.models = {}
+        self.id = f'{template["group"]}-{template["name"]}'
 
     def load_models(self):
         self.load_data(self.load_model)
-        addJob(self)
+        add_update_job(self)
     
     def update_models(self):
         self.load_data(self.update_model)
 
     def load_data(self, callback):
         # Get the data from Prometheus for the given expression
+        logger.info(f'Loading data from Prometheus for model group {self.id}...')
         metrics = query_range(
             self.template['expr'],
             self.template['params']['training_window'], 
@@ -55,27 +60,31 @@ class PredictorModel:
         self.fbmodel = None
         self.forecast = None
 
-        params = template['params']
+    def train(self):
+        logger.info(f'Training model {self.metric["hash"]}...')
+
+        params = self.template['params']
         self.fbmodel = Prophet(
             daily_seasonality = params['daily_seasonality'],
             weekly_seasonality = params['weekly_seasonality'],
             yearly_seasonality = params['yearly_seasonality']
         )
 
-    def train(self):
         df = pd.DataFrame(self.metric['values'], columns=['ds', 'y'])
         df['ds'] = pd.to_datetime(arg=df['ds'], origin='unix', unit='s')
+
         self.fbmodel.fit(df)
         self.predict()
         self.save()
 
     def update(self, metric):
+        logger.info(f'Updating model {self.metric["hash"]}...')
         self.metric = metric
         self.train()
 
     def predict(self):
         retraining_interval = self.template['params']['retraining_interval']
-        prediction_interval_minutes = get_interval_minutes(retraining_interval)
+        prediction_interval_minutes = get_interval_minutes(retraining_interval) * 3
         df = self.fbmodel.make_future_dataframe(
             periods = prediction_interval_minutes, 
             freq = '1MIN', 
