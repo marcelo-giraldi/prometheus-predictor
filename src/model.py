@@ -1,3 +1,4 @@
+import os
 from fbprophet import Prophet, serialize
 import pickle
 import pandas as pd
@@ -119,6 +120,8 @@ class PredictorModel:
 
         # Save the model to disk
         try:
+            if not os.path.exists('./config/models'):
+                os.makedirs('./config/models')
             with open(f'./config/models/{filename}','wb+') as f:
                 pickle.dump(self, f)
         finally:
@@ -127,6 +130,8 @@ class PredictorModel:
         # Save the prediction plot to disk
         if getEnv('SAVE_PLOTS'):
             try:
+                if not os.path.exists('./config/plots'):
+                    os.makedirs('./config/plots')
                 self.fbmodel.plot(self.forecast).savefig(f'./config/plots/{filename}.png')
             except Exception:
                 pass

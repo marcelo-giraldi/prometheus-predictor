@@ -32,7 +32,7 @@ class MetricsHandler(tornado.web.RequestHandler):
         prediction = model.get_forecast(datetime.now(timezone.utc))
 
         for column in list(prediction.columns):
-            self.metrics_list.append(get_formatted_metric(metric_name, labels, prediction[column][0]))
+            self.metrics_list.append(get_formatted_metric(metric_name, { **labels, 'value_type': column }, prediction[column][0]))
 
 def start():
     settings = getSettings('server')
