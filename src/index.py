@@ -1,7 +1,9 @@
-import controller, webserver, scheduler
+import os
 import logging
+import controller, webserver, scheduler
 
-logging.basicConfig(level=logging.DEBUG)
+LOGLEVEL = os.environ.get('DEBUG_MODE', 'INFO').upper()
+logging.basicConfig(level=LOGLEVEL)
 
 logging.info('Starting scheduler...')
 scheduler.start()

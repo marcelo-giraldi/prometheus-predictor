@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 model_groups = []
 
 def start(): 
-    thread = Thread(target=load_models, args=())
+    thread = Thread(target=load_models, args=(), daemon=True)
     thread.start()
 
 def load_models():

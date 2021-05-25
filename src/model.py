@@ -22,8 +22,8 @@ class PredictorModelGroup:
         # Get the data from Prometheus for the given expression
         metrics = query_range(
             self.template['expr'],
-            self.template['params'].setdefault('training_window', '1h'), 
-            self.template['params'].setdefault('resolution', '15s')
+            self.template['params']['training_window'], 
+            self.template['params']['resolution']
         )
 
         if callback:
@@ -57,9 +57,9 @@ class PredictorModel:
 
         params = template['params']
         self.fbmodel = Prophet(
-            daily_seasonality = params.setdefault('daily_seasonality', False),
-            weekly_seasonality = params.setdefault('weekly_seasonality', False),
-            yearly_seasonality = params.setdefault('yearly_seasonality', False)
+            daily_seasonality = params['daily_seasonality'],
+            weekly_seasonality = params['weekly_seasonality'],
+            yearly_seasonality = params['yearly_seasonality']
         )
 
     def train(self):
@@ -74,7 +74,7 @@ class PredictorModel:
         self.train()
 
     def predict(self):
-        retraining_interval = self.template['params'].setdefault('retraining_interval', '1h')
+        retraining_interval = self.template['params']['retraining_interval']
         prediction_interval_minutes = get_interval_minutes(retraining_interval)
         df = self.fbmodel.make_future_dataframe(
             periods = prediction_interval_minutes, 

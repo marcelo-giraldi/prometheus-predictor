@@ -23,8 +23,8 @@ class MetricsHandler(tornado.web.RequestHandler):
             for model in model_group.models.values():
                 self.set_metrics(model)
 
+        self.set_header("Content-Type", "text/plain; charset=utf-8")
         self.write('\n'.join(self.metrics_list))
-        self.set_header("Content-Type", "text; charset=utf-8")
 
     def set_metrics(self, model):
         metric_name = f'{model.template["name"]}_pred'
@@ -39,8 +39,8 @@ def start():
     app = tornado.web.Application(
         [
             ('/', MainHandler),
-            (settings.setdefault('metrics_path', '/metrics'), MetricsHandler),
+            (settings['metrics_path'], MetricsHandler),
         ]
     )
-    app.listen(settings.setdefault('port', 8080))
+    app.listen(settings['port'])
     tornado.ioloop.IOLoop.current().start()

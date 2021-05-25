@@ -5,11 +5,11 @@ from util import get_interval_minutes
 
 def addJob(model_group):
     params = model_group.template['params']
-    interval = params.setdefault('retraining_interval', '1h')
+    interval = params['retraining_interval']
     schedule.every(get_interval_minutes(interval)).minutes.do(model_group.update_models)
 
 def start():
-    thread = Thread(target=run, args=())
+    thread = Thread(target=run, args=(), daemon=True)
     thread.start()
 
 def run():
