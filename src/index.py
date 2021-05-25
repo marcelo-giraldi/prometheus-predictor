@@ -1,8 +1,8 @@
-import os
 import logging
 import controller, webserver, scheduler
+from config_parser import getEnv
 
-LOGLEVEL = os.environ.get('DEBUG_MODE', 'INFO').upper()
+LOGLEVEL = getEnv('DEBUG_MODE')
 logging.basicConfig(level=LOGLEVEL)
 
 logging.info('Starting scheduler...')

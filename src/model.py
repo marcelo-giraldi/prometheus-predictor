@@ -4,6 +4,7 @@ import pandas as pd
 from prom_client import query_range
 from scheduler import add_update_job
 from util import get_interval_minutes
+from config_parser import getEnv
 import logging
 
 logger = logging.getLogger(__name__)
@@ -67,8 +68,17 @@ class PredictorModel:
         self.fbmodel = Prophet(
             daily_seasonality = params['daily_seasonality'],
             weekly_seasonality = params['weekly_seasonality'],
-            yearly_seasonality = params['yearly_seasonality']
+            yearly_seasonality = params['yearly_seasonality'],
+            seasonality_mode=params['seasonality_mode'],
+            changepoint_prior_scale=params['changepoint_prior_scale'],
+            growth=params['growth']
         )
+
+        if params['monthly_seasonality']:
+            fourier_order = 5
+            if type(params['monthly_seasonality']) == int:
+                fourier_order = params['monthly_seasonality']
+            self.fbmodel.add_seasonality(name='monthly', period=30.5, fourier_order=fourier_order)
 
         df = pd.DataFrame(self.metric['values'], columns=['ds', 'y'])
         df['ds'] = pd.to_datetime(arg=df['ds'], origin='unix', unit='s')
@@ -91,24 +101,35 @@ class PredictorModel:
             include_history = False
         )
         forecast = self.fbmodel.predict(df)
-        forecast = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
-        forecast = forecast.set_index("ds")
         self.forecast = forecast
 
     def get_forecast(self, ds):
-        nearest_index = self.forecast.index.get_loc(ds, method='nearest')
-        return self.forecast.iloc[[nearest_index]]
+        forecast = self.forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
+        forecast = forecast.set_index("ds")
+        nearest_index = forecast.index.get_loc(ds, method='nearest')
+        return forecast.iloc[[nearest_index]]
 
     def save(self):
         fbmodel = self.fbmodel
         group_name = self.template['group']
         template_name = self.template['name']
         self.fbmodel = serialize.model_to_json(fbmodel)
+
+        filename = f'{group_name}_{template_name}_{self.metric["hash"]}'
+
+        # Save the model to disk
         try:
-            with open(f'./config/models/{group_name}_{template_name}_{self.metric["hash"]}','wb+') as f:
+            with open(f'./config/models/{filename}','wb+') as f:
                 pickle.dump(self, f)
         finally:
             self.fbmodel = fbmodel
+
+        # Save the prediction plot to disk
+        if getEnv('SAVE_PLOTS'):
+            try:
+                self.fbmodel.plot(self.forecast).savefig(f'./config/plots/{filename}.png')
+            except Exception:
+                pass
 
     @staticmethod
     def load(group_name, template_name, hash):
