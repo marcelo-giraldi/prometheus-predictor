@@ -9,9 +9,9 @@ dependencies:
   - pip:
       - pandas
       - schedule
-      - prometheus_client
       - prometheus_api_client
       - tornado
       - dateparser
       - numpy
       - pyyaml
+      - holidays

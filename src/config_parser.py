@@ -19,6 +19,9 @@ def getEnv(key):
 def getSettings(group):
     return config['settings'][group]
 
+def getHolidays(group):
+    return config['holidays'][group]
+
 def getParams(group_name):
     params = config['params'][group_name]
     params.setdefault('retraining_interval', '1h')
@@ -35,6 +38,8 @@ def getParams(group_name):
 
 def getModelTemplate(group_name, template_name):
     template = config['model_templates'][group_name][template_name]
+    if template['holidays']:
+        template['holidays'] = getHolidays(template['holidays'])
     template['params'] = getParams(template['params'])
     template['group'] = group_name
     template['name'] = template_name
