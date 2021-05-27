@@ -1,7 +1,6 @@
 from threading import Thread
 from model import PredictorModelGroup
 from config_parser import getModelTemplates
-from scheduler import update_all_now
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,5 +17,4 @@ def load_models():
         model_group = PredictorModelGroup(template)
         model_groups.append(model_group)
         model_group.load_models()
-    logger.info('Models loaded. Updating all...')
-    update_all_now()
+    logger.info('Models loaded.')

@@ -38,7 +38,7 @@ def getParams(group_name):
 
 def getModelTemplate(group_name, template_name):
     template = config['model_templates'][group_name][template_name]
-    if template['holidays']:
+    if 'holidays' in template:
         template['holidays'] = getHolidays(template['holidays'])
     template['params'] = getParams(template['params'])
     template['group'] = group_name
