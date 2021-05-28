@@ -72,7 +72,7 @@ class PredictorModel:
 
     def get_holidays(self):
         if not 'holidays' in self.template:
-            return []
+            return pd.DataFrame([], columns=['holiday', 'ds'])
 
         now = datetime.now()
         delta_past = parse_timedelta('now', self.template['params']['training_window'])
