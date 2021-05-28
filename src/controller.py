@@ -17,4 +17,9 @@ def load_models():
         model_group = PredictorModelGroup(template)
         model_groups.append(model_group)
         model_group.load_models()
-    logger.info('Models loaded.')
+
+    logger.info('Models loaded. Training them all...')
+
+    for model_group in model_groups:
+        for model in model_group.models.values():
+            model.train()

@@ -51,35 +51,24 @@ class PredictorModelGroup:
             model = PredictorModel(metric, self.template)
             logger.info(f'New model {metric["hash"]} created')            
 
-        # Train the model
-        model.train()
-
         # Append the model to the models list
-        self.models[model.hash] = model
+        self.models[model.metric['hash']] = model
 
     def update_model(self, metric):
         model = self.models[metric['hash']]
-        model.set_train_df(metric)
-        model.train()
+        model.update(metric)
 
 class PredictorModel:
 
     def __init__(self, metric, template):
-        self.hash = metric['hash']
+        self.metric = metric
         self.template = template
         self.fbmodel = None
         self.forecast = None
-        self.train_df = None
-        self.set_train_df(metric)
 
     def get_forecast_minutes(self):
         retraining_interval = self.template['params']['retraining_interval']
         return get_interval_minutes(retraining_interval) * 3
-
-    def set_train_df(self, metric):
-        df = pd.DataFrame(metric['values'], columns=['ds', 'y'])
-        df['ds'] = pd.to_datetime(arg=df['ds'], origin='unix', unit='s')
-        self.train_df = df
 
     def get_holidays(self):
         if not 'holidays' in self.template:
@@ -99,7 +88,7 @@ class PredictorModel:
         )
 
     def train(self):
-        logger.info(f'Training model {self.hash}...')
+        logger.info(f'Training model {self.metric["hash"]}...')
 
         params = self.template['params']
         holidays = pd.DataFrame({
@@ -123,9 +112,17 @@ class PredictorModel:
                 fourier_order = params['monthly_seasonality']
             self.fbmodel.add_seasonality(name='monthly', period=30.5, fourier_order=fourier_order)
 
-        self.fbmodel.fit(self.train_df)
+        df = pd.DataFrame(self.metric['values'], columns=['ds', 'y'])
+        df['ds'] = pd.to_datetime(arg=df['ds'], origin='unix', unit='s')
+
+        self.fbmodel.fit(df)
         self.predict()
         self.save()
+    
+    def update(self, metric):
+        logger.info(f'Updating model {self.metric["hash"]}...')
+        self.metric = metric
+        self.train()
 
     def predict(self):
         df = self.fbmodel.make_future_dataframe(
@@ -148,7 +145,7 @@ class PredictorModel:
         template_name = self.template['name']
         self.fbmodel = serialize.model_to_json(fbmodel)
 
-        filename = f'{group_name}_{template_name}_{self.hash}'
+        filename = f'{group_name}_{template_name}_{self.metric["hash"]}'
 
         # Save the model to disk
         try:
@@ -177,5 +174,5 @@ class PredictorModel:
             instance = pickle.load(f)
             instance.fbmodel = serialize.model_from_json(instance.fbmodel)
             instance.template = template
-            instance.set_train_df(metric)
+            instance.metric = metric
             return instance
