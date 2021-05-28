@@ -91,10 +91,7 @@ class PredictorModel:
         logger.info(f'Training model {self.metric["hash"]}...')
 
         params = self.template['params']
-        holidays = pd.DataFrame({
-            'holiday': 'holiday',
-            'ds': self.get_holidays()
-        })
+        holidays = self.get_holidays()
 
         self.fbmodel = Prophet(
             daily_seasonality = params['daily_seasonality'],

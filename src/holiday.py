@@ -1,5 +1,6 @@
 import sys
 from util import date_range
+import pandas as pd
 
 sys.path.insert(1, './config')
 
@@ -15,7 +16,11 @@ def get_instance(config):
 
 def get_holidays_between(instance, start_date, end_date):
     holidays = []
+
     for date in date_range(start_date, end_date, exclusive=False):
         if date in instance:
-            holidays.append(date)
-    return holidays
+            holiday_names = instance.get(date).split(', ')
+            for holiday_name in holiday_names:
+                holidays.append([holiday_name, date])
+
+    return pd.DataFrame(holidays, columns=['holiday', 'ds'])
