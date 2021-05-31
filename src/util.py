@@ -3,7 +3,7 @@ from prometheus_api_client.utils import parse_timedelta
 
 def get_interval_minutes(interval):
     delta = parse_timedelta('now', interval)
-    return round(delta.seconds / 60)
+    return round(delta.seconds / 60) + round(delta.days * 24 * 60)
 
 def get_formatted_metric(name, labels, value):
     formatted_labels = []

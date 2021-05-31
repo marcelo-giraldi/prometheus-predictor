@@ -29,10 +29,13 @@ class MetricsHandler(tornado.web.RequestHandler):
     def set_metrics(self, model):
         metric_name = f'{model.template["name"]}_pred'
         labels = model.metric['metric']
-        prediction = model.get_forecast(datetime.now(timezone.utc))
 
-        for column in list(prediction.columns):
-            self.metrics_list.append(get_formatted_metric(metric_name, { **labels, 'value_type': column }, prediction[column][0]))
+        try:
+            prediction = model.get_forecast(datetime.now(timezone.utc))
+            for column in list(prediction.columns):
+                self.metrics_list.append(get_formatted_metric(metric_name, { **labels, 'value_type': column }, prediction[column][0]))
+        except Exception:
+            pass
 
 def start():
     settings = getSettings('server')
