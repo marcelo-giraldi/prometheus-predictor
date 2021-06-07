@@ -25,6 +25,10 @@ class PredictorModelGroup:
     def load_models(self):
         self.load_data(self.load_model)
         add_update_job(self)
+
+    def train_models(self):
+        for model in self.models.values():
+            self.train_model(model)
     
     def update_models(self):
         self.load_data(self.update_model)
@@ -59,6 +63,12 @@ class PredictorModelGroup:
         # Append the model to the models list
         self.models[model.metric['hash']] = model
         return model
+
+    def train_model(self, model):
+        try:
+            model.train()
+        except Exception as e:
+            logging.exception(f'Error while training model {model.id()}: {str(e)}')
 
     def update_model(self, metric):
         try:

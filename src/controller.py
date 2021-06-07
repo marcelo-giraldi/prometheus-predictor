@@ -21,5 +21,6 @@ def load_models():
     logger.info('Models loaded. Training them all...')
 
     for model_group in model_groups:
-        for model in model_group.models.values():
-            model.train()
+        model_group.train_models()
+
+    logger.info('Training completed')
