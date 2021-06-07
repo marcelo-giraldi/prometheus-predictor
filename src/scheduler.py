@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def add_update_job(model_group):
     params = model_group.template['params']
     interval_minutes = get_interval_minutes(params['retraining_interval'])
-    logger.info(f'Scheduling retraining for model group {model_group.id} every {interval_minutes} minutes...')
+    logger.info(f'Scheduling retraining for model group {model_group.id()} every {interval_minutes} minutes...')
     schedule.every(interval_minutes).minutes.do(model_group.update_models)
 
 def update_all_now():

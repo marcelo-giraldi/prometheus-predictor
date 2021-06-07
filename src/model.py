@@ -18,7 +18,9 @@ class PredictorModelGroup:
     def __init__(self, template):
         self.template = template
         self.models = {}
-        self.id = f'{template["group"]}-{template["name"]}'
+
+    def id(self):
+        return f'{self.template["group"]}-{self.template["name"]}'
 
     def load_models(self):
         self.load_data(self.load_model)
@@ -28,35 +30,47 @@ class PredictorModelGroup:
         self.load_data(self.update_model)
 
     def load_data(self, callback):
-        # Get the data from Prometheus for the given expression
-        logger.info(f'Loading data from Prometheus for model group {self.id}...')
-        metrics = query_range(
-            self.template['expr'],
-            self.template['params']['training_window'],
-            self.template['params']['resolution']
-        )
+        try:
+            # Get the data from Prometheus for the given expression
+            logger.info(f'Loading data from Prometheus for model group {self.id()}...')
+            metrics = query_range(
+                self.template['expr'],
+                self.template['params']['training_window'],
+                self.template['params']['resolution']
+            )
 
-        if callback:
-            for metric in metrics:
-                callback(metric)
-        
-        return metrics
+            if callback:
+                for metric in metrics:
+                    callback(metric)
+            
+            return metrics
+        except Exception as e:
+            logging.exception(f'Error while getting data from Prometheus: {str(e)}')
     
     def load_model(self, metric):
         # Try to load a model instance from disk. If there is none, creates a new instance
         try:
             model = PredictorModel.load(metric, self.template)
-            logger.info(f'Model {metric["hash"]} loaded from disk')
+            logger.info(f'Model {model.id()} loaded from disk')
         except IOError as e:
             model = PredictorModel(metric, self.template)
-            logger.info(f'New model {metric["hash"]} created')            
+            logger.info(f'New model {model.id()} created')            
 
         # Append the model to the models list
         self.models[model.metric['hash']] = model
+        return model
 
     def update_model(self, metric):
-        model = self.models[metric['hash']]
-        model.update(metric)
+        try:
+            model = None
+            if metric['hash'] in self.models:
+                model = self.models[metric['hash']]
+            else:
+                logger.info(f'Model hash {metric["hash"]} not found in list. Loading from scratch...')
+                model = self.load_model(metric)
+            model.update(metric)
+        except Exception as e:
+            logger.exception(f'Error while updating model hash {metric["hash"]}: {str(e)}')
 
 class PredictorModel:
 
@@ -65,6 +79,9 @@ class PredictorModel:
         self.template = template
         self.fbmodel = None
         self.forecast = None
+
+    def id(self):
+        return f'{self.template["group"]}_{self.template["name"]}_{self.metric["hash"]}'
 
     def get_forecast_minutes(self):
         retraining_interval = self.template['params']['retraining_interval']
@@ -88,7 +105,7 @@ class PredictorModel:
         )
 
     def train(self):
-        logger.info(f'Training model {self.metric["hash"]}...')
+        logger.info(f'Training model {self.id()}...')
 
         params = self.template['params']
         holidays = self.get_holidays()
@@ -117,7 +134,7 @@ class PredictorModel:
         self.save()
     
     def update(self, metric):
-        logger.info(f'Updating model {self.metric["hash"]}...')
+        logger.info(f'Updating model {self.id()}...')
         self.metric = metric
         self.train()
 
@@ -142,13 +159,11 @@ class PredictorModel:
         template_name = self.template['name']
         self.fbmodel = serialize.model_to_json(fbmodel)
 
-        filename = f'{group_name}_{template_name}_{self.metric["hash"]}'
-
         # Save the model to disk
         try:
             if not os.path.exists('./config/models'):
                 os.makedirs('./config/models')
-            with open(f'./config/models/{filename}','wb+') as f:
+            with open(f'./config/models/{self.id()}','wb+') as f:
                 pickle.dump(self, f)
         finally:
             self.fbmodel = fbmodel
@@ -158,7 +173,7 @@ class PredictorModel:
             try:
                 if not os.path.exists('./config/plots'):
                     os.makedirs('./config/plots')
-                self.fbmodel.plot(self.forecast).savefig(f'./config/plots/{filename}.png')
+                self.fbmodel.plot(self.forecast).savefig(f'./config/plots/{self.id()}.png')
             except Exception:
                 pass
 
