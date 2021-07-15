@@ -9,6 +9,8 @@ from scheduler import add_update_job
 from util import get_interval_minutes
 from config_parser import getEnv
 from holiday import get_instance, get_holidays_between
+import matplotlib.pyplot as plt
+import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,7 +42,8 @@ class PredictorModelGroup:
             metrics = query_range(
                 self.template['expr'],
                 self.template['params']['training_window'],
-                self.template['params']['resolution']
+                self.template['params']['resolution'],
+                self.template['fill_na']
             )
 
             if callback:
@@ -142,6 +145,8 @@ class PredictorModel:
         self.fbmodel.fit(df)
         self.predict()
         self.save()
+        if getEnv('SAVE_PLOTS'):
+            self.plot(df)
     
     def update(self, metric):
         logger.info(f'Updating model {self.id()}...')
@@ -165,8 +170,6 @@ class PredictorModel:
 
     def save(self):
         fbmodel = self.fbmodel
-        group_name = self.template['group']
-        template_name = self.template['name']
         self.fbmodel = serialize.model_to_json(fbmodel)
 
         # Save the model to disk
@@ -178,14 +181,17 @@ class PredictorModel:
         finally:
             self.fbmodel = fbmodel
 
-        # Save the prediction plot to disk
-        if getEnv('SAVE_PLOTS'):
-            try:
-                if not os.path.exists('./config/plots'):
-                    os.makedirs('./config/plots')
-                self.fbmodel.plot(self.forecast).savefig(f'./config/plots/{self.id()}.png')
-            except Exception:
-                pass
+    def plot(self, df):
+        try:
+            if not os.path.exists('./config/plots'):
+                os.makedirs('./config/plots')
+            fig = self.fbmodel.plot(self.forecast, figsize=(20,10))
+            fig.suptitle(self.metric['metric'], size='xx-large')
+            plt.plot(df['ds'], np.array(df['y']).astype(np.float))
+            plt.savefig(f'./config/plots/{self.id()}.png')
+            
+        except Exception as e:
+            logger.error(f'Error while saving plot for model {self.id()}: {str(e)}')
 
     @staticmethod
     def load(metric, template):

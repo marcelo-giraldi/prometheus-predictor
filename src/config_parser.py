@@ -43,6 +43,7 @@ def getModelTemplate(group_name, template_name):
     template['params'] = getParams(template['params'])
     template['group'] = group_name
     template['name'] = template_name
+    template.setdefault('fill_na', None)
     return template
 
 def getModelTemplates():

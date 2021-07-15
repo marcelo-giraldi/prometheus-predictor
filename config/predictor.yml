@@ -15,6 +15,7 @@ model_templates:
     saturation:
       expr: sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
       params: three_weeks
+      fill_na: zeros
     latency:
       expr: sum(irate(alertmanager_http_request_duration_seconds_sum[5m])) / sum(irate(alertmanager_http_request_duration_seconds_count[5m]))
       params: three_months
